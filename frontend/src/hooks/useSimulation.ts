@@ -30,9 +30,9 @@ export function useSimulation() {
   useEffect(() => {
     api.getParties().then(p => {
       setParties(p);
-      Promise.all([api.simulate(DEFAULT_INPUT), api.simulateMPs(DEFAULT_INPUT)])
-        .then(([res, mpRes]) => { setResult(res); setMpPrediction(mpRes); })
-        .catch(() => {});
+      // Szimuláció és MP predikció egymástól függetlenül
+      api.simulate(DEFAULT_INPUT).then(setResult).catch(() => {});
+      api.simulateMPs(DEFAULT_INPUT).then(setMpPrediction).catch(() => {});
     }).catch(() => {});
   }, []);
 
@@ -41,13 +41,11 @@ export function useSimulation() {
     setLoading(true);
     setError(null);
     try {
-      const [res, mpRes] = await Promise.all([
-        api.simulate(simInput),
-        api.simulateMPs(simInput),
-      ]);
+      const res = await api.simulate(simInput);
       setResult(res);
-      setMpPrediction(mpRes);
       if (newInput) setInput(newInput);
+      // MP predikció háttérben — nem blokkolja a fő szimulációt
+      api.simulateMPs(simInput).then(setMpPrediction).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Szimuláció hiba');
     } finally {
