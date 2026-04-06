@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { PredictedMP } from '../../types/election';
 
 interface MPListModalProps {
@@ -10,13 +10,73 @@ interface MPListModalProps {
   onClose: () => void;
 }
 
+type SortKey = 'index' | 'name' | 'party' | 'source';
+type SortDir = 'asc' | 'desc';
+
+function SortHeader({ label, sortKey, currentKey, currentDir, onSort, className }: {
+  label: string; sortKey: SortKey; currentKey: SortKey; currentDir: SortDir;
+  onSort: (key: SortKey) => void; className?: string;
+}) {
+  const isActive = currentKey === sortKey;
+  return (
+    <th
+      className={`px-2 py-2 text-left font-medium cursor-pointer select-none hover:text-gray-200 transition-colors ${
+        isActive ? 'text-blue-400' : 'text-gray-400'
+      } ${className || ''}`}
+      onClick={() => onSort(sortKey)}
+    >
+      {label} {isActive ? (currentDir === 'asc' ? '▲' : '▼') : ''}
+    </th>
+  );
+}
+
 export default function MPListModal({ mps, partyColors, partyNames, title, filterParty, onClose }: MPListModalProps) {
   const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('index');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  const filtered = mps
-    .filter(mp => !filterParty || mp.party_id === filterParty)
-    .filter(mp => !search || mp.name.toLowerCase().includes(search.toLowerCase()) ||
-                  (partyNames[mp.party_id] || '').toLowerCase().includes(search.toLowerCase()));
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const filtered = useMemo(() => {
+    let list = mps.filter(mp => !filterParty || mp.party_id === filterParty);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(mp =>
+        mp.name.toLowerCase().includes(q) ||
+        (partyNames[mp.party_id] || '').toLowerCase().includes(q) ||
+        (mp.oevk_name || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [mps, filterParty, search, partyNames]);
+
+  const sorted = useMemo(() => {
+    // Eredeti index megőrzése a rendezéshez
+    const indexed = filtered.map((mp, i) => ({ mp, origIdx: i }));
+
+    const getSourceStr = (mp: PredictedMP) =>
+      mp.source === 'oevk' ? (mp.oevk_name || mp.oevk_id || '') : `Lista #${mp.list_position || 0}`;
+
+    indexed.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'index': cmp = a.origIdx - b.origIdx; break;
+        case 'name': cmp = a.mp.name.localeCompare(b.mp.name, 'hu'); break;
+        case 'party': cmp = (partyNames[a.mp.party_id] || '').localeCompare(partyNames[b.mp.party_id] || '', 'hu'); break;
+        case 'source': cmp = getSourceStr(a.mp).localeCompare(getSourceStr(b.mp), 'hu'); break;
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+
+    return indexed;
+  }, [filtered, sortKey, sortDir, partyNames]);
 
   const oevkCount = filtered.filter(m => m.source === 'oevk').length;
   const listaCount = filtered.filter(m => m.source === 'lista').length;
@@ -39,7 +99,7 @@ export default function MPListModal({ mps, partyColors, partyNames, title, filte
         <div className="px-5 py-3 border-b border-gray-800">
           <input
             type="text"
-            placeholder="Keresés név vagy párt szerint..."
+            placeholder="Keresés név, párt vagy OEVK szerint..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500"
@@ -50,16 +110,16 @@ export default function MPListModal({ mps, partyColors, partyNames, title, filte
           <table className="w-full text-sm">
             <thead className="bg-gray-800/50 sticky top-0">
               <tr>
-                <th className="px-4 py-2 text-left text-gray-400 font-medium w-8">#</th>
-                <th className="px-2 py-2 text-left text-gray-400 font-medium">Név</th>
-                <th className="px-2 py-2 text-left text-gray-400 font-medium">Párt</th>
-                <th className="px-2 py-2 text-left text-gray-400 font-medium">Forrás</th>
+                <SortHeader label="#" sortKey="index" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} className="w-10 px-4" />
+                <SortHeader label="Név" sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortHeader label="Párt" sortKey="party" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortHeader label="Forrás" sortKey="source" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((mp, i) => (
-                <tr key={`${mp.party_id}-${mp.name}-${i}`} className="border-t border-gray-800/30 hover:bg-gray-800/40">
-                  <td className="px-4 py-2 font-data text-gray-500">{i + 1}</td>
+              {sorted.map(({ mp, origIdx }) => (
+                <tr key={`${mp.party_id}-${mp.name}-${origIdx}`} className="border-t border-gray-800/30 hover:bg-gray-800/40">
+                  <td className="px-4 py-2 font-data text-gray-500">{origIdx + 1}</td>
                   <td className="px-2 py-2 text-white">{mp.name}</td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
