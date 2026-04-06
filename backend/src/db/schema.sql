@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS polls (
   basis TEXT NOT NULL CHECK (basis IN ('teljes_nepesseg', 'partvalaszto', 'biztos_partvalaszto')),
   party_id TEXT NOT NULL,
   support_pct REAL NOT NULL,
+  affiliation TEXT,
   sample_size INTEGER,
   margin_of_error REAL,
   source_url TEXT,

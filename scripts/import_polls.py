@@ -157,6 +157,45 @@ def identify_party_columns(headers: list[str]) -> dict[int, str]:
     return party_cols
 
 
+def normalize_affiliation(text: str) -> str | None:
+    """Affiliation normalizálás: 'Government' → 'kormanyparti', 'Independent/opposition' → 'fuggetlen'"""
+    lower = text.strip().lower()
+    if not lower:
+        return None
+    if "government" in lower or "kormány" in lower:
+        return "kormanyparti"
+    if "independent" in lower or "opposition" in lower or "függet" in lower or "ellenzék" in lower:
+        return "fuggetlen"
+    return None
+
+
+# Ismert intézetek → affiliation fallback (Wikipedia alapján)
+KNOWN_AFFILIATIONS: dict[str, str] = {
+    "Medián": "fuggetlen",
+    "Závecz Research": "fuggetlen",
+    "IDEA Intézet": "fuggetlen",
+    "Publicus": "fuggetlen",
+    "Republikon Intézet": "fuggetlen",
+    "21 Kutatóközpont": "fuggetlen",
+    "Iránytű Intézet": "fuggetlen",
+    "Iránytű Institute": "fuggetlen",
+    "Minerva": "fuggetlen",
+    "Forrás Társadalomkutató": "fuggetlen",
+    "Vox Populi": "fuggetlen",
+    "Policy Solutions": "fuggetlen",
+    "TÁRKI": "fuggetlen",
+    "taktikaiszavazas.hu": "fuggetlen",
+    "Választási földrajz": "fuggetlen",
+    "Nézőpont Intézet": "kormanyparti",
+    "Magyar Társadalomkutató": "kormanyparti",
+    "Alapjogokért Központ": "kormanyparti",
+    "21. Század Intézet": "kormanyparti",
+    "Századvég": "kormanyparti",
+    "Real-PR 93": "kormanyparti",
+    "McLaughlin & Associates": "kormanyparti",
+}
+
+
 def scrape_en_wiki() -> list[dict]:
     """Angol Wikipedia közvélemény-kutatási táblázatok scraping-je."""
     log.info("Angol Wikipedia oldal letöltése...")
@@ -170,6 +209,8 @@ def scrape_en_wiki() -> list[dict]:
     log.info(f"  {len(tables)} wikitable találva")
 
     all_polls: list[dict] = []
+    # Intézet → affiliation leképezés (Table 1-ből), később alkalmazzuk a többi táblára is
+    institute_affiliation: dict[str, str] = {}
 
     for table_idx, table in enumerate(tables):
         # Csak az első ~5 táblát nézzük (a pollok ott vannak)
@@ -212,10 +253,11 @@ def scrape_en_wiki() -> list[dict]:
         if len(party_cols) < 2:
             continue
 
-        # Dátum, intézet, mintaméret oszlopok keresése
+        # Dátum, intézet, mintaméret, affiliation oszlopok keresése
         date_col = None
         institute_col = None
         sample_col = None
+        affiliation_col = None
         for i, h in enumerate(header_texts):
             lower = h.lower()
             if date_col is None and ("date" in lower or "fieldwork" in lower or "felmér" in lower):
@@ -224,6 +266,8 @@ def scrape_en_wiki() -> list[dict]:
                 institute_col = i
             elif sample_col is None and ("sample" in lower or "minta" in lower or "size" in lower):
                 sample_col = i
+            elif affiliation_col is None and ("affiliation" in lower or "client" in lower):
+                affiliation_col = i
 
         if date_col is None:
             date_col = 0
@@ -257,6 +301,26 @@ def scrape_en_wiki() -> list[dict]:
             institute = normalize_institute(inst_text)
             if not institute or len(institute) < 2:
                 continue
+            # Szűrés: ha az intézet név dátum-szerű (pl. "12 Sep 2025"), kihagyjuk
+            if re.match(r"^\d+\s+\w+\s+\d{4}", institute):
+                continue
+            # "Election" sorok kihagyása
+            if "election" in institute.lower():
+                continue
+
+            # Affiliation (csak a Table 1-ben szerepel direkt módon)
+            affiliation = None
+            if affiliation_col is not None and affiliation_col < len(cell_texts):
+                affiliation = normalize_affiliation(cell_texts[affiliation_col])
+                if affiliation:
+                    institute_affiliation[institute] = affiliation
+
+            # Ha nincs direkt affiliation, próbáljuk a korábban gyűjtött leképezésből
+            if not affiliation:
+                affiliation = institute_affiliation.get(institute)
+            # Végső fallback: ismert intézetek listájából
+            if not affiliation:
+                affiliation = KNOWN_AFFILIATIONS.get(institute)
 
             # Mintaméret
             sample_size = None
@@ -269,7 +333,6 @@ def scrape_en_wiki() -> list[dict]:
                 if col_idx < len(cell_texts):
                     pct = parse_pct(cell_texts[col_idx])
                     if pct is not None and 0 < pct <= 80:
-                        # Ha ugyanaz a party_id már van, a nagyobbat tartjuk
                         if party_id not in parties or pct > parties[party_id]:
                             parties[party_id] = pct
 
@@ -279,6 +342,7 @@ def scrape_en_wiki() -> list[dict]:
                     "institute": institute,
                     "basis": "biztos_partvalaszto",
                     "sample_size": sample_size,
+                    "affiliation": affiliation,
                     "parties": parties,
                 })
 
@@ -308,10 +372,10 @@ def import_polls_to_db(polls: list[dict]):
 
             conn.execute(
                 """INSERT INTO polls
-                   (poll_date, institute, basis, party_id, support_pct, sample_size, margin_of_error, source_url)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                   (poll_date, institute, basis, party_id, support_pct, affiliation, sample_size, margin_of_error, source_url)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (poll["date"], poll["institute"], poll["basis"], party_id, pct,
-                 poll.get("sample_size"), None, WIKI_URL)
+                 poll.get("affiliation"), poll.get("sample_size"), None, WIKI_URL)
             )
             inserted += 1
 

@@ -32,18 +32,44 @@ pollsRouter.get('/', (req, res) => {
 });
 
 // GET /api/polls/trend — Trend adatok (idősor)
+// ?basis=...  ?affiliation=kormanyparti|fuggetlen|all  ?institute=Medián
 pollsRouter.get('/trend', (req, res) => {
   const db = getDb();
-  const basis = req.query.basis || 'biztos_partvalaszto';
+  const basis = (req.query.basis as string) || 'biztos_partvalaszto';
+  const affiliation = req.query.affiliation as string | undefined;
+  const institute = req.query.institute as string | undefined;
 
-  const polls = db.prepare(`
-    SELECT poll_date, institute, party_id, support_pct
+  let query = `
+    SELECT poll_date, institute, affiliation, party_id, support_pct
     FROM polls
     WHERE basis = ?
-    ORDER BY poll_date ASC, party_id
-  `).all(basis);
+  `;
+  const params: unknown[] = [basis];
 
+  if (affiliation && affiliation !== 'all') {
+    query += ' AND affiliation = ?';
+    params.push(affiliation);
+  }
+  if (institute) {
+    query += ' AND institute = ?';
+    params.push(institute);
+  }
+
+  query += ' ORDER BY poll_date ASC, party_id';
+  const polls = db.prepare(query).all(...params);
   res.json(polls);
+});
+
+// GET /api/polls/institutes — Egyedi intézetek listája affiliációval
+pollsRouter.get('/institutes', (_req, res) => {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT institute, affiliation, COUNT(*) as poll_count
+    FROM polls
+    GROUP BY institute, affiliation
+    ORDER BY poll_count DESC
+  `).all();
+  res.json(rows);
 });
 
 // POST /api/polls/import — CSV import
