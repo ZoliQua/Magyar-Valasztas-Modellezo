@@ -7,6 +7,7 @@ interface ListCandidate {
   candidate_name: string;
   list_name: string;
   list_type: string;
+  runs_in_oevk?: number;
 }
 
 interface ListDetailPanelProps {
@@ -18,12 +19,22 @@ interface ListDetailPanelProps {
   mps?: PredictedMP[];
 }
 
+// Merged entry: lista jelölt vagy OEVK győztes
+interface MergedEntry {
+  type: 'lista' | 'oevk';
+  name: string;
+  listPos?: number;         // eredeti lista sorszám
+  effectivePos?: number;    // effektív bejutási sorszám
+  oevkName?: string;
+  isIn: boolean;            // bejut-e
+}
+
 export default function ListDetailPanel({
   listSeats, fragmentVotes, partyColors, partyNames, oevkResults, mps,
 }: ListDetailPanelProps) {
   const [expandedParty, setExpandedParty] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<ListCandidate[]>([]);
-  const [removedCount, setRemovedCount] = useState(0);
+  const [unfilteredCandidates, setUnfilteredCandidates] = useState<ListCandidate[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [showOevkWinners, setShowOevkWinners] = useState(false);
 
@@ -43,23 +54,20 @@ export default function ListDetailPanel({
     setShowOevkWinners(false);
     try {
       const wonOevks = (oevkResults || []).filter(r => r.winner_party === partyId).map(r => r.oevk_id);
-      const url = wonOevks.length > 0
+
+      // Szűrt lista (OEVK győztesek nélkül)
+      const filteredUrl = wonOevks.length > 0
         ? `/api/parties/${partyId}/list-candidates?wonOevks=${wonOevks.join(',')}`
         : `/api/parties/${partyId}/list-candidates`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error();
-      const data: ListCandidate[] = await res.json();
-      if (wonOevks.length > 0) {
-        const unfilteredRes = await fetch(`/api/parties/${partyId}/list-candidates`);
-        const unfiltered: ListCandidate[] = await unfilteredRes.json();
-        setRemovedCount(unfiltered.length - data.length);
-      } else {
-        setRemovedCount(0);
-      }
-      setCandidates(data);
+      const [filteredRes, unfilteredRes] = await Promise.all([
+        fetch(filteredUrl).then(r => r.json()),
+        fetch(`/api/parties/${partyId}/list-candidates`).then(r => r.json()),
+      ]);
+      setCandidates(filteredRes);
+      setUnfilteredCandidates(unfilteredRes);
     } catch {
       setCandidates([]);
-      setRemovedCount(0);
+      setUnfilteredCandidates([]);
     } finally {
       setLoadingCandidates(false);
     }
@@ -69,6 +77,44 @@ export default function ListDetailPanel({
   const getOevkMPs = (partyId: string): PredictedMP[] => {
     if (!mps) return [];
     return mps.filter(mp => mp.party_id === partyId && mp.source === 'oevk');
+  };
+
+  // Merged lista: OEVK győztesek + listás bejutók, lista sorszám szerint rendezve
+  const buildMergedList = (partyId: string): MergedEntry[] => {
+    const seats = listSeats[partyId] || 0;
+    const oevkMPsList = getOevkMPs(partyId);
+    const oevkWinnerNames = new Set(oevkMPsList.map(m => m.name.toUpperCase().trim()));
+
+    // Teljes lista (szűretlen) — lista sorszám szerint
+    const merged: MergedEntry[] = [];
+    let listaInCount = 0;
+
+    for (const c of unfilteredCandidates) {
+      const isOevkWinner = oevkWinnerNames.has(c.candidate_name.toUpperCase().trim());
+
+      if (isOevkWinner) {
+        // OEVK-t nyert → OEVK mandátumot kap, listáról kiesik
+        const oevkMp = oevkMPsList.find(m => m.name.toUpperCase().trim() === c.candidate_name.toUpperCase().trim());
+        merged.push({
+          type: 'oevk',
+          name: c.candidate_name,
+          listPos: c.position,
+          oevkName: oevkMp?.oevk_name || oevkMp?.oevk_id,
+          isIn: true, // OEVK-ból bejut
+        });
+      } else {
+        // Listáról jut be (ha van elég mandátum)
+        listaInCount++;
+        merged.push({
+          type: 'lista',
+          name: c.candidate_name,
+          listPos: c.position,
+          effectivePos: listaInCount,
+          isIn: listaInCount <= seats,
+        });
+      }
+    }
+    return merged;
   };
 
   return (
@@ -123,9 +169,9 @@ export default function ListDetailPanel({
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-xs text-gray-500">
                           {candidates[0]?.list_name}
-                          {removedCount > 0 && (
+                          {oevkMPs.length > 0 && (
                             <span className="text-yellow-500/70">
-                              {' '}— {removedCount} jelölt OEVK-t nyert
+                              {' '}— {oevkMPs.length} jelölt OEVK-t nyert
                             </span>
                           )}
                         </div>
@@ -138,54 +184,68 @@ export default function ListDetailPanel({
                                 : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
                             }`}
                           >
-                            {showOevkWinners ? '✓ ' : ''}OEVK bejutottak ({oevkMPs.length})
+                            {showOevkWinners ? '✓ ' : ''}OEVK bejutottak
                           </button>
                         )}
                       </div>
 
-                      <div className="space-y-0.5 max-h-80 overflow-y-auto">
-                        {/* OEVK bejutottak ha toggle be van kapcsolva */}
-                        {showOevkWinners && oevkMPs
-                          .sort((a, b) => (a.oevk_id || '').localeCompare(b.oevk_id || ''))
-                          .map((mp, i) => (
-                            <div key={`oevk-${i}`} className="flex items-center gap-2 px-2 py-1 rounded text-xs bg-blue-900/20 text-blue-200">
-                              <span className="font-data w-6 text-right text-blue-400 flex-shrink-0">E</span>
-                              <span className="font-medium flex-1">{mp.name}</span>
-                              <span className="text-blue-400/70 flex-shrink-0">{mp.oevk_name}</span>
-                            </div>
-                          ))
-                        }
-
-                        {/* Listás bejutók */}
-                        {candidates.slice(0, Math.max(seats + 5, 15)).map((c, i) => {
-                          const isIn = i < seats;
-                          const effectivePos = c.effective_position || (i + 1);
-                          return (
+                      <div className="space-y-0.5 max-h-96 overflow-y-auto">
+                        {showOevkWinners ? (
+                          // === MERGED NÉZET: teljes lista sorrend, OEVK győztesek beillesztve ===
+                          buildMergedList(party).slice(0, Math.max(seats + oevkMPs.length + 5, 20)).map((entry, i) => (
                             <div
-                              key={`list-${c.position}-${c.candidate_name}`}
+                              key={`merged-${i}`}
                               className={`flex items-center gap-2 px-2 py-1 rounded text-xs ${
-                                isIn ? 'bg-gray-800/80 text-white' : 'text-gray-500'
+                                entry.type === 'oevk'
+                                  ? 'bg-blue-900/20 text-blue-200'
+                                  : entry.isIn ? 'bg-gray-800/80 text-white' : 'text-gray-500'
                               }`}
                             >
-                              <span className={`font-data w-14 text-right flex-shrink-0 ${isIn ? 'text-yellow-400' : 'text-gray-600'}`}>
-                                {effectivePos}. ({c.position}.)
+                              <span className={`font-data w-8 text-right flex-shrink-0 ${
+                                entry.type === 'oevk' ? 'text-blue-400' :
+                                entry.isIn ? 'text-yellow-400' : 'text-gray-600'
+                              }`}>
+                                {entry.listPos}.
                               </span>
-                              <span className={`flex-1 ${isIn ? 'font-medium' : ''}`}>
-                                {c.candidate_name}
+                              <span className={`flex-1 ${entry.isIn ? 'font-medium' : ''}`}>
+                                {entry.name}
                               </span>
-                              {isIn && i === seats - 1 && (
-                                <span className="text-yellow-500/70 flex-shrink-0">← utolsó bejutó</span>
-                              )}
-                              {!isIn && i === seats && (
-                                <span className="text-red-400/60 flex-shrink-0">← első kieső</span>
-                              )}
+                              <span className="flex-shrink-0 text-xs">
+                                {entry.type === 'oevk' ? (
+                                  <span className="text-blue-400/70">OEVK: {entry.oevkName}</span>
+                                ) : entry.isIn ? (
+                                  <span className="text-purple-400/70">Lista #{entry.effectivePos}</span>
+                                ) : null}
+                              </span>
                             </div>
-                          );
-                        })}
-                        {candidates.length > Math.max(seats + 5, 15) && (
-                          <div className="text-xs text-gray-600 px-2 py-1">
-                            + {candidates.length - Math.max(seats + 5, 15)} további jelölt
-                          </div>
+                          ))
+                        ) : (
+                          // === CSAK LISTÁS NÉZET: OEVK győztesek kiszűrve ===
+                          candidates.slice(0, Math.max(seats + 5, 15)).map((c, i) => {
+                            const isIn = i < seats;
+                            const effectivePos = c.effective_position || (i + 1);
+                            return (
+                              <div
+                                key={`list-${c.position}-${i}`}
+                                className={`flex items-center gap-2 px-2 py-1 rounded text-xs ${
+                                  isIn ? 'bg-gray-800/80 text-white' : 'text-gray-500'
+                                }`}
+                              >
+                                <span className={`font-data w-14 text-right flex-shrink-0 ${isIn ? 'text-yellow-400' : 'text-gray-600'}`}>
+                                  {effectivePos}. ({c.position}.)
+                                </span>
+                                <span className={`flex-1 ${isIn ? 'font-medium' : ''}`}>
+                                  {c.candidate_name}
+                                </span>
+                                {isIn && i === seats - 1 && (
+                                  <span className="text-yellow-500/70 flex-shrink-0">← utolsó bejutó</span>
+                                )}
+                                {!isIn && i === seats && (
+                                  <span className="text-red-400/60 flex-shrink-0">← első kieső</span>
+                                )}
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     </>
