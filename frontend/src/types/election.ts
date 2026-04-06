@@ -48,3 +48,20 @@ export interface SimulationResult {
   majority: string | null;
   supermajority: boolean;
 }
+
+export interface PredictedMP {
+  name: string;
+  party_id: string;
+  source: 'oevk' | 'lista';
+  oevk_id?: string;
+  oevk_name?: string;
+  list_position?: number;
+  original_list_position?: number;
+}
+
+export interface MPPrediction {
+  mps: PredictedMP[];
+  totalSeats: Record<string, number>;
+  oevkSeats: Record<string, number>;
+  listSeats: Record<string, number>;
+}

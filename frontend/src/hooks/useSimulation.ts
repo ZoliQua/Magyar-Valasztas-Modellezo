@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Party, SimulationInput, SimulationResult } from '../types/election';
+import type { Party, SimulationInput, SimulationResult, MPPrediction } from '../types/election';
 import { api } from '../services/api';
 
 const DEFAULT_INPUT: SimulationInput = {
@@ -25,11 +25,14 @@ export function useSimulation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePreset, setActivePreset] = useState<number | null>(null);
+  const [mpPrediction, setMpPrediction] = useState<MPPrediction | null>(null);
 
   useEffect(() => {
     api.getParties().then(p => {
       setParties(p);
-      api.simulate(DEFAULT_INPUT).then(setResult).catch(() => {});
+      Promise.all([api.simulate(DEFAULT_INPUT), api.simulateMPs(DEFAULT_INPUT)])
+        .then(([res, mpRes]) => { setResult(res); setMpPrediction(mpRes); })
+        .catch(() => {});
     }).catch(() => {});
   }, []);
 
@@ -38,8 +41,12 @@ export function useSimulation() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.simulate(simInput);
+      const [res, mpRes] = await Promise.all([
+        api.simulate(simInput),
+        api.simulateMPs(simInput),
+      ]);
       setResult(res);
+      setMpPrediction(mpRes);
       if (newInput) setInput(newInput);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Szimuláció hiba');
@@ -138,6 +145,7 @@ export function useSimulation() {
     input,
     setInput,
     result,
+    mpPrediction,
     parties,
     loading,
     error,

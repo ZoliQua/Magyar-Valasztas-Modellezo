@@ -1,4 +1,4 @@
-import type { Party, Election, SimulationInput, SimulationResult } from '../types/election';
+import type { Party, Election, SimulationInput, SimulationResult, MPPrediction } from '../types/election';
 
 const BASE_URL = '/api';
 
@@ -21,6 +21,12 @@ export const api = {
 
   simulate: (input: SimulationInput) =>
     fetchJson<SimulationResult>('/simulate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  simulateMPs: (input: SimulationInput) =>
+    fetchJson<MPPrediction>('/simulate/mps', {
       method: 'POST',
       body: JSON.stringify(input),
     }),

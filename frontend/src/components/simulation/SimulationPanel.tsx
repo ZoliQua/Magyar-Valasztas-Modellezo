@@ -10,6 +10,7 @@ import OevkResultsTable from '../results/OevkResultsTable';
 import HungaryMap from '../map/HungaryMap';
 import ListDetailPanel from '../results/ListDetailPanel';
 import OevkDetailPanel from '../results/OevkDetailPanel';
+import MPListModal from '../results/MPListModal';
 
 interface SelectedOevk {
   oevk_id: string;
@@ -21,6 +22,7 @@ export default function SimulationPanel() {
   const {
     input,
     result,
+    mpPrediction,
     parties,
     loading,
     error,
@@ -34,6 +36,8 @@ export default function SimulationPanel() {
   } = useSimulation();
 
   const [selectedOevk, setSelectedOevk] = useState<SelectedOevk | null>(null);
+  const [showAllMPs, setShowAllMPs] = useState(false);
+  const [showPartyMPs, setShowPartyMPs] = useState<string | null>(null);
 
   const partyColors = useMemo(() => {
     const map: Record<string, string> = {};
@@ -151,11 +155,14 @@ export default function SimulationPanel() {
                 partyNames={partyNames}
                 majority={result.majority}
                 supermajority={result.supermajority}
+                mps={mpPrediction?.mps}
+                onShowAllMPs={() => setShowAllMPs(true)}
               />
               <SeatSummary
                 seats={result.totalSeats}
                 partyColors={partyColors}
                 partyNames={partyNames}
+                onPartyClick={(id) => setShowPartyMPs(id)}
               />
             </div>
 
@@ -172,6 +179,7 @@ export default function SimulationPanel() {
               partyColors={partyColors}
               partyNames={partyNames}
               oevkResults={result.oevkResults}
+              mps={mpPrediction?.mps}
             />
 
             <OevkResultsTable
@@ -203,6 +211,27 @@ export default function SimulationPanel() {
           partyNames={partyNames}
           simulationResult={result?.oevkResults.find(r => r.oevk_id === selectedOevk.oevk_id)}
           onClose={() => setSelectedOevk(null)}
+        />
+      )}
+
+      {showAllMPs && mpPrediction && (
+        <MPListModal
+          mps={mpPrediction.mps}
+          partyColors={partyColors}
+          partyNames={partyNames}
+          title="Prediktált Országgyűlés — 199 képviselő"
+          onClose={() => setShowAllMPs(false)}
+        />
+      )}
+
+      {showPartyMPs && mpPrediction && (
+        <MPListModal
+          mps={mpPrediction.mps}
+          partyColors={partyColors}
+          partyNames={partyNames}
+          title={`${partyNames[showPartyMPs] || showPartyMPs} — képviselők`}
+          filterParty={showPartyMPs}
+          onClose={() => setShowPartyMPs(null)}
         />
       )}
     </div>
