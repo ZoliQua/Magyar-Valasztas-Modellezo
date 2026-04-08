@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSimulation } from '../../hooks/useSimulation';
+import { exportSimulationPdf } from '../../services/pdfExport';
 import ListShareInputs from './ListShareInputs';
 import SwingSliders from './SwingSliders';
 import TurnoutSlider from './TurnoutSlider';
@@ -18,7 +19,11 @@ interface SelectedOevk {
   county: string;
 }
 
-export default function SimulationPanel() {
+interface SimulationPanelProps {
+  onRegisterExport?: (fn: (() => Promise<void>) | null) => void;
+}
+
+export default function SimulationPanel({ onRegisterExport }: SimulationPanelProps = {}) {
   const {
     input,
     result,
@@ -50,6 +55,20 @@ export default function SimulationPanel() {
     for (const p of parties) map[p.id] = p.short_name;
     return map;
   }, [parties]);
+
+  // PDF export fn regisztrálása a Header-be — csak akkor, ha van eredmény
+  useEffect(() => {
+    if (!onRegisterExport) return;
+    if (!result || !mpPrediction || parties.length === 0) {
+      onRegisterExport(null);
+      return;
+    }
+    const exportFn = async () => {
+      await exportSimulationPdf({ input, result, mpPrediction, parties });
+    };
+    onRegisterExport(exportFn);
+    return () => onRegisterExport(null);
+  }, [onRegisterExport, input, result, mpPrediction, parties]);
 
   const handleRun = useCallback(() => {
     runSimulation();

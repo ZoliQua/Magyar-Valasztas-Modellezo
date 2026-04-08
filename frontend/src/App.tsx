@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import SimulationPanel from './components/simulation/SimulationPanel';
@@ -32,20 +32,46 @@ function PollsPage({ parties }: { parties: Party[] }) {
 
 function App() {
   const [parties, setParties] = useState<Party[]>([]);
+  // PDF export callback a SimulationPanel-ből — funkcionális setState az async állapotkezeléshez
+  const [exportHandler, setExportHandler] = useState<(() => Promise<void>) | null>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
 
   useEffect(() => {
     api.getParties().then(setParties).catch(() => {});
   }, []);
 
+  // Callback amit a SimulationPanel hívhat az export fn regisztrálására
+  // Functional setState-et használunk, hogy a fn-t ne hívjuk meg updater-ként
+  const registerExportHandler = useCallback((fn: (() => Promise<void>) | null) => {
+    setExportHandler(() => fn);
+  }, []);
+
+  const handleExportClick = useCallback(async () => {
+    if (!exportHandler) return;
+    setPdfExporting(true);
+    try {
+      await exportHandler();
+    } catch (err) {
+      console.error('PDF export hiba:', err);
+      alert('PDF export sikertelen: ' + (err instanceof Error ? err.message : 'ismeretlen hiba'));
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [exportHandler]);
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
-        <Header />
+        <Header
+          onExportPdf={handleExportClick}
+          pdfExporting={pdfExporting}
+          canExportPdf={exportHandler !== null}
+        />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
           <main className="flex-1 p-6 overflow-hidden">
             <Routes>
-              <Route path="/" element={<SimulationPanel />} />
+              <Route path="/" element={<SimulationPanel onRegisterExport={registerExportHandler} />} />
               <Route path="/torteneti" element={<HistoricalPage parties={parties} />} />
               <Route path="/kutatasok" element={<PollsPage parties={parties} />} />
             </Routes>
