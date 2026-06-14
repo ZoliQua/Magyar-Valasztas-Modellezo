@@ -54,7 +54,9 @@ PARTY_NAME_MAP: dict[str, str] = {
     "fidesz": "fidesz_kdnp",
     "fidesz-mps": "fidesz_kdnp",
     "fidesz-kdnp-összefogás": "fidesz_kdnp",
-    # Tisza
+    # Tisza — hivatalos szervezetnév 2026: "Tisztelet és Szabadság Párt"
+    "tisztelet és szabadság párt": "tisza",
+    "tisztelet és szabadság": "tisza",
     "tisza párt": "tisza",
     "tisza": "tisza",
     # Mi Hazánk

@@ -2,9 +2,17 @@ node_modules/
 dist/
 *.db
 *.sqlite
+# A Vercel serverless függvény írásvédett, beépített adatbázis-pillanatképe.
+# Ezt szándékosan verziókövetjük, hogy a deploy tartalmazza az adatokat.
+!backend/data/valasztas.db
+# SQLite tranziens fájlok (WAL/SHM) — sosem verziókövetjük
+*.db-shm
+*.db-wal
 .env
 .env.local
 .DS_Store
 *.log
 __pycache__/
 *.tsbuildinfo
+# Letöltési gyorsítótár (nyers VTR JSON-ok, nagy ZIP archívum) — nem verziókövetjük
+scripts/downloads/

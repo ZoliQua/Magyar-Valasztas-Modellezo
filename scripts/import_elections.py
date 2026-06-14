@@ -30,6 +30,10 @@ VTR_2022_OEVK_DEFS = f"{VTR_2022_BASE}/04022333/ver/OevkAdatok.json"
 VTR_2022_PREV_RESULTS = f"{VTR_2022_BASE}/04022333/ver/ElozoOevkEredmenyek.json"
 VTR_2022_COUNTIES = f"{VTR_2022_BASE}/04022333/ver/Megyek.json"
 
+# === VTR 2026 JSON API ===
+# A verziók a config.json-ból jönnek: "ver" (jelöltek), "szavossz" (jogerős eredmény).
+VTR_2026_BASE = "https://vtr.valasztas.hu/ogy2026/data"
+
 # Master archive for older elections
 MASTER_ZIP_URL = "https://static.valasztas.hu/dyn/letoltesek/valasztasi_eredmenyek_1990-2024.zip"
 
@@ -258,6 +262,158 @@ def import_2018_from_vtr(conn):
     conn.commit()
 
 
+def import_2026(conn):
+    """
+    2026-os hivatalos jogerős eredmények importálása a VTR JSON API-ból.
+
+    A config.json adja a verziókat:
+      - "ver"      → jelölt/szervezet adatok (.../{ver}/ver/...)
+      - "szavossz"  → jogerős szavazatösszesítés (.../{szavossz}/szavossz/...)
+    Ha a "szavossz" még null, az eredmények nincsenek publikálva → kihagyjuk.
+
+    A meglévő 2026-os sorok (jelölt-regisztráció, votes=0) helyére a tényleges
+    eredmények kerülnek. A séma és a logika a 2022-es importtal megegyezik.
+    """
+    log.info("=== 2026 választás importálása (hivatalos jogerős eredmény) ===")
+
+    # Verziók a config.json-ból (mindig frissen)
+    cfg_path = download_file(f"{VTR_2026_BASE}/config.json", "vtr2026_config.json", force=True)
+    with open(cfg_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    ver = cfg.get("ver")
+    szavossz = cfg.get("szavossz")
+    if not szavossz:
+        log.warning("  2026: nincs még jogerős szavazatösszesítés (szavossz=null) — kihagyva.")
+        return
+    log.info(f"  ver={ver}  szavossz={szavossz}")
+
+    def dl(path: str, local: str) -> list:
+        """VTR JSON friss letöltése (force) és list kibontása."""
+        p = download_file(f"{VTR_2026_BASE}/{path}", local, force=True)
+        with open(p, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, dict) and "list" in data:
+            return data["list"]
+        return data if isinstance(data, list) else [data]
+
+    parties_data = dl(f"{ver}/ver/Szervezetek.json", "vtr2026_szervezetek.json")
+    candidates_data = dl(f"{ver}/ver/EgyeniJeloltek.json", "vtr2026_egyeni_jeloltek.json")
+    oevk_results = dl(f"{szavossz}/szavossz/OevkJkv.json", "vtr2026_oevk_jkv.json")
+    list_jkv = dl(f"{szavossz}/szavossz/ListasJkv.json", "vtr2026_listas_jkv.json")
+    party_totals = dl(f"{szavossz}/szavossz/SzervezetekEredmenye.json", "vtr2026_szervezetek_eredmenye.json")
+
+    party_map = build_party_map_2022(parties_data)
+
+    # Jelölt → párt + név. 2026-ra a jlcs_nev (jelölőcsoport név) megbízható.
+    candidate_party: dict[str, dict] = {}
+    for c in candidates_data:
+        ej_id = str(c.get("ej_id", ""))
+        jlcs_nev = c.get("jlcs_nev", "")
+        party_id = normalize_party_name(jlcs_nev) if jlcs_nev else "other"
+        org_codes = c.get("jelolo_szervezetek", [])
+        is_independent = (not org_codes) or (org_codes == [0])
+        if party_id == "other" and not is_independent:
+            for code in (org_codes if isinstance(org_codes, list) else [org_codes]):
+                pid = party_map.get(str(code), "other")
+                if pid != "other":
+                    party_id = pid
+                    break
+        if is_independent:
+            party_id = "other"
+        name = c.get("neve", "") or c.get("nev", "")
+        dr = c.get("dr_jelzo", "")
+        if dr:
+            name = f"{dr} {name}"
+        candidate_party[ej_id] = {"party_id": party_id, "name": name}
+
+    # A korábbi 2026-os sorok (jelölt-regisztráció) törlése
+    conn.execute("DELETE FROM oevk_results WHERE election_year = 2026")
+    conn.execute("DELETE FROM list_results WHERE election_year = 2026")
+
+    # OEVK eredmények (egyeni_jkv.tetelek[])
+    oevk_count = 0
+    for oevk in oevk_results:
+        maz = str(oevk.get("maz", "")).zfill(2)
+        evk = str(oevk.get("evk", "")).zfill(2)
+        oevk_id = f"{maz}_{evk}"
+        egyeni_jkv = oevk.get("egyeni_jkv", {})
+        tetelek = egyeni_jkv.get("tetelek", [])
+        if not tetelek:
+            continue
+        total_valid = egyeni_jkv.get("szl_ervenyes", 0) or sum(t.get("szavazat", 0) for t in tetelek)
+        tetelek_sorted = sorted(tetelek, key=lambda t: t.get("szavazat", 0), reverse=True)
+        for i, t in enumerate(tetelek_sorted):
+            ej_id = str(t.get("ej_id", ""))
+            votes = t.get("szavazat", 0)
+            info = candidate_party.get(ej_id, {"party_id": "other", "name": t.get("neve", "") or ""})
+            vote_pct = (votes / total_valid * 100) if total_valid > 0 else 0
+            conn.execute(
+                """INSERT INTO oevk_results
+                   (election_year, oevk_id, oevk_id_2026, party_id, candidate_name, votes, vote_share_pct, is_winner)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (2026, oevk_id, oevk_id, info["party_id"], info["name"],
+                 votes, round(vote_pct, 2), 1 if i == 0 else 0)
+            )
+            oevk_count += 1
+    log.info(f"  {oevk_count} OEVK jelölt eredmény importálva")
+
+    # Listás eredmények — deduplikálás tl_id alapján (koalíciós listák egyszer)
+    list_party_overrides: dict[int, str] = {}
+    for c in candidates_data:
+        jlcs_nev = c.get("jlcs_nev", "")
+        listak = c.get("listak", [])
+        if not jlcs_nev or not listak:
+            continue
+        pid = normalize_party_name(jlcs_nev)
+        if pid == "other":
+            continue
+        for lista in listak:
+            if isinstance(lista, dict):
+                tid = lista.get("tl_id")
+            elif isinstance(lista, (int, str)):
+                tid = int(lista)
+            else:
+                continue
+            if tid and tid not in list_party_overrides:
+                list_party_overrides[tid] = pid
+
+    seen_tl_ids: set[int] = set()
+    unique_list_entries: list[tuple[str, int]] = []
+    for p in party_totals:
+        szkod = str(p.get("szkod", ""))
+        votes = p.get("listas_szavazat", 0)
+        tl_id = p.get("tl_id")
+        if votes <= 0 or szkod == "0":
+            continue
+        if tl_id and tl_id in seen_tl_ids:
+            continue
+        if tl_id:
+            seen_tl_ids.add(tl_id)
+        party_id = list_party_overrides.get(tl_id, party_map.get(szkod, "other"))
+        unique_list_entries.append((party_id, votes))
+
+    total_list_votes = sum(v for _, v in unique_list_entries)
+    for party_id, votes in unique_list_entries:
+        vote_pct = (votes / total_list_votes * 100) if total_list_votes > 0 else 0
+        conn.execute(
+            """INSERT INTO list_results
+               (election_year, level, county, party_id, votes, vote_share_pct)
+               VALUES (?, 'national', NULL, ?, ?, ?)""",
+            (2026, party_id, votes, round(vote_pct, 2))
+        )
+    log.info(f"  {len(unique_list_entries)} listás eredmény importálva (deduplikálva tl_id alapján)")
+
+    # Részvétel az országos (oszint=5) ListasJkv sorból
+    national = [x for x in list_jkv if str(x.get("oszint")) == "5"]
+    turnout = national[0].get("szavazott_osszesen_szaz") if national else None
+    conn.execute(
+        "UPDATE elections SET turnout_pct = ?, notes = ? WHERE year = 2026",
+        (turnout, f"2026-os országgyűlési választás — hivatalos jogerős eredmény (NVI, szavossz {szavossz})")
+    )
+    conn.commit()
+    log.info(f"  Részvétel: {turnout}%")
+
+
 def import_from_master_zip(conn):
     """
     Régebbi választások importálása a master ZIP-ből.
@@ -404,8 +560,11 @@ def main():
         # 2014, 2010, 2006 — master ZIP (ha elérhető)
         import_from_master_zip(conn)
 
+        # 2026 — hivatalos jogerős eredmény (ha már publikált a szavossz)
+        import_2026(conn)
+
         # Végső statisztika
-        for year in [2006, 2010, 2014, 2018, 2022]:
+        for year in [2006, 2010, 2014, 2018, 2022, 2026]:
             oevk_count = conn.execute(
                 "SELECT COUNT(*) FROM oevk_results WHERE election_year = ?", (year,)
             ).fetchone()[0]

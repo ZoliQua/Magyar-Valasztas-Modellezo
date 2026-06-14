@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDb } from '../db/database';
+import { getDb, READ_ONLY } from '../db/database';
 
 export const simulationsRouter = Router();
 
@@ -14,6 +14,14 @@ simulationsRouter.get('/', (_req, res) => {
 
 // POST /api/simulations — Szimuláció mentése
 simulationsRouter.post('/', (req, res) => {
+  // Írásvédett (serverless) környezetben nem lehet menteni.
+  if (READ_ONLY) {
+    res.status(503).json({
+      error: 'A szimulációk mentése ebben a környezetben nem érhető el (írásvédett adatbázis).',
+    });
+    return;
+  }
+
   const db = getDb();
   const { name, description, config } = req.body as {
     name: string;
