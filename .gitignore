@@ -16,3 +16,4 @@ __pycache__/
 *.tsbuildinfo
 # Letöltési gyorsítótár (nyers VTR JSON-ok, nagy ZIP archívum) — nem verziókövetjük
 scripts/downloads/
+.vercel
