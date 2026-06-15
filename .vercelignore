@@ -1,0 +1,11 @@
+# Helyi `vercel deploy` (CLI) feltöltésből kizárt elemek.
+# A git-integrációs deploy ezeket amúgy is kihagyja (.gitignore), de a CLI a
+# munkamappát tölti fel — a nagy letöltési gyorsítótár (309 MB ZIP) átlépné a
+# 100 MB-os limitet.
+node_modules
+scripts/downloads
+docs
+frontend/dist
+backend/dist
+.git
+*.log
