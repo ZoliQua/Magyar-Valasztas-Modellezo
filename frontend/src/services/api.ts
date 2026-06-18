@@ -42,4 +42,8 @@ export const api = {
 
   getSimulation: (id: number) =>
     fetchJson<{ id: number; name: string; config_json: string }>(`/simulations/${id}`),
+
+  // Tényleges (hivatalos) választási eredmény SimulationResult formában
+  getActualResult: (year: number) =>
+    fetchJson<SimulationResult>(`/elections/${year}/actual-result`),
 };

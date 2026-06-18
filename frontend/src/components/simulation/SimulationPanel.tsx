@@ -8,6 +8,7 @@ import HemicycleChart from '../results/HemicycleChart';
 import SeatSummary from '../results/SeatSummary';
 import MajorityIndicator from '../results/MajorityIndicator';
 import OevkResultsTable from '../results/OevkResultsTable';
+import ActualResultOverlay from '../results/ActualResultOverlay';
 import HungaryMap from '../map/HungaryMap';
 import ListDetailPanel from '../results/ListDetailPanel';
 import OevkDetailPanel from '../results/OevkDetailPanel';
@@ -43,6 +44,7 @@ export default function SimulationPanel({ onRegisterExport }: SimulationPanelPro
   const [selectedOevk, setSelectedOevk] = useState<SelectedOevk | null>(null);
   const [showAllMPs, setShowAllMPs] = useState(false);
   const [showPartyMPs, setShowPartyMPs] = useState<string | null>(null);
+  const [show2026Actual, setShow2026Actual] = useState(false);
 
   const partyColors = useMemo(() => {
     const map: Record<string, string> = {};
@@ -153,10 +155,49 @@ export default function SimulationPanel({ onRegisterExport }: SimulationPanelPro
             {error}
           </div>
         )}
+
+        {/* 2026 tényleges eredmény be/ki kapcsoló */}
+        <div className="space-y-2 pt-1 border-t border-gray-800">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={show2026Actual}
+            onClick={() => setShow2026Actual(v => !v)}
+            className="w-full flex items-center justify-between gap-3 py-1 group"
+          >
+            <span className="text-left">
+              <span className="block text-sm font-medium text-amber-200">
+                2026 végleges eredmény
+              </span>
+              <span className="block text-xs text-gray-500">
+                Hivatalos eredmény a szimuláció mellett
+              </span>
+            </span>
+            <span
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+                show2026Actual ? 'bg-amber-500' : 'bg-gray-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  show2026Actual ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </span>
+          </button>
+        </div>
       </aside>
 
       {/* Jobb oldali panel: eredmények */}
       <div className="flex-1 space-y-6 overflow-y-auto pb-6">
+        {show2026Actual && (
+          <ActualResultOverlay
+            year={2026}
+            partyColors={partyColors}
+            partyNames={partyNames}
+          />
+        )}
+
         {result ? (
           <>
             <MajorityIndicator

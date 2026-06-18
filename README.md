@@ -17,7 +17,7 @@
 
 ## 🎯 Mi ez?
 
-A **Magyar Választási Modellező** egy teljes körű, interaktív dashboard a 2026-os magyar országgyűlési választás eredményeinek szimulálásához. A program valódi történeti adatokra épül (2014–2022), és lehetővé teszi a mandátumelosztás modellezését különböző forgatókönyvek alapján.
+A **Magyar Választási Modellező** egy teljes körű, interaktív dashboard a 2026-os magyar országgyűlési választás eredményeinek szimulálásához. A program valódi történeti adatokra épül (2014–2022) és a **2026-os hivatalos, jogerős eredményre**, és lehetővé teszi a mandátumelosztás modellezését különböző forgatókönyvek alapján.
 
 ### ✨ Főbb funkciók
 
@@ -25,6 +25,7 @@ A **Magyar Választási Modellező** egy teljes körű, interaktív dashboard a 
 - 🗺️ **Interaktív térkép** — 106 OEVK valódi GeoJSON poligonokkal, zoom/pan, Budapest nagyítás
 - 📊 **Szimuláció motor** — D'Hondt módszer, töredékszavazat-számítás, uniform swing modell
 - 🔄 **Egyedi swing mód** — OEVK szintű automatikus swing a listás arányok alapján
+- ✅ **2026 végleges eredmény** — a hivatalos, jogerős eredmény (NVI / valasztas.hu) egy kapcsolóval a szimuláció mellé kapcsolható összehasonlításként; a mandátumokat ugyanaz a D'Hondt + töredékszavazat motor számolja a valós szavazatokból (TISZA 141 · FIDESZ-KDNP 52 · Mi Hazánk 6)
 - 👤 **Valódi jelöltek** — 651 regisztrált 2026-os jelölt a vtr.valasztas.hu-ról
 - 📋 **Listás mandátumok** — kattintható pártlisták, OEVK győztesek automatikus kiszűrése
 - 📈 **Közvélemény-kutatások** — 300+ kutatás trendje az angol Wikipediáról
@@ -84,7 +85,8 @@ pip install -r requirements.txt
 # 2026-os OEVK definíciók (106 OEVK + 3207 település)
 python import_oevk_mapping.py
 
-# Választási eredmények (2022 VTR JSON API + 2018 + 2014 XLSX)
+# Választási eredmények (2022 VTR JSON API + 2018 + 2014 XLSX +
+# 2026 hivatalos jogerős eredmény, ha a config.json "szavossz" mezője már kitöltött)
 python import_elections.py
 
 # 2026-os jelöltek (651 regisztrált jelölt)
@@ -154,6 +156,7 @@ npm run dev
 | GET | `/api/parties/:id/list-candidates` | Országos lista jelöltjei (OEVK győztesek szűrve) |
 | GET | `/api/elections` | Választási évek |
 | GET | `/api/elections/:year/national-shares` | Országos listás arányok |
+| GET | `/api/elections/:year/actual-result` | Tényleges (hivatalos) eredmény mandátumokkal (pl. 2026) |
 | GET | `/api/elections/:year/oevk` | OEVK eredmények |
 | POST | `/api/simulate` | Szimuláció futtatása |
 | GET | `/api/oevk/definitions` | 106 OEVK definíció |
@@ -169,7 +172,7 @@ npm run dev
 | Forrás | Adat | Formátum |
 |--------|------|----------|
 | 🏛️ [vtr.valasztas.hu/ogy2022](https://vtr.valasztas.hu/ogy2022/) | 2022 OEVK + listás eredmények | JSON API |
-| 🏛️ [vtr.valasztas.hu/ogy2026](https://vtr.valasztas.hu/ogy2026/) | 2026 jelöltek (651 fő) | JSON API |
+| 🏛️ [vtr.valasztas.hu/ogy2026](https://vtr.valasztas.hu/ogy2026/) | 2026 jelöltek (651 fő) + hivatalos jogerős eredmény | JSON API |
 | 🏛️ [vtr.valasztas.hu/stat](https://vtr.valasztas.hu/stat) | 2026 OEVK definíciók + települések | JSON API |
 | 🏛️ [static.valasztas.hu](https://static.valasztas.hu/dyn/oevk_data/oevk.json) | OEVK határok (poligonok) | JSON |
 | 📦 [static.valasztas.hu](https://static.valasztas.hu/dyn/letoltesek/valasztasi_eredmenyek_1990-2024.zip) | 2014 listás eredmények | ZIP → XLSX |
@@ -186,13 +189,23 @@ npm run test                # Backend tesztek (D'Hondt + töredékszavazat)
 npm run build               # Teljes build (backend + frontend)
 ```
 
+## ☁️ Telepítés Vercelre
+
+A projekt Vercelen szerver nélküli (serverless) módban fut:
+
+- A **frontend** statikus buildként szolgálódik ki (`frontend/dist`).
+- A **backend** Express app egyetlen serverless függvényként fut (`api/[...path].ts`), amely a teljes `/api/*` forgalmat kiszolgálja.
+- Az **adatbázis írásvédett**: a deploy egy beépített, kész SQLite pillanatképet tartalmaz (`backend/data/valasztas.db`), amelyet a függvény `readonly` módban nyit. Ezért a szimulációk *mentése* (POST `/api/simulations`) Vercelen nem érhető el — a számítás és minden lekérdezés viszont igen.
+
+A konfiguráció a `vercel.json`-ban van. Az adatok frissítéséhez futtasd újra a Python importot lokálisan, majd commiteld az új `backend/data/valasztas.db` pillanatképet.
+
 ---
 
 # 🇬🇧 English
 
 ## 🎯 What is this?
 
-The **Hungarian Election Modeler** is a comprehensive interactive dashboard for simulating the results of the 2026 Hungarian parliamentary election. Built on real historical data (2014–2022), it enables seat allocation modeling under various scenarios.
+The **Hungarian Election Modeler** is a comprehensive interactive dashboard for simulating the results of the 2026 Hungarian parliamentary election. Built on real historical data (2014–2022) and the **official, final 2026 result**, it enables seat allocation modeling under various scenarios.
 
 ### ✨ Key Features
 
@@ -200,6 +213,7 @@ The **Hungarian Election Modeler** is a comprehensive interactive dashboard for 
 - 🗺️ **Interactive map** — 106 constituencies with real GeoJSON polygons, zoom/pan, Budapest zoom
 - 📊 **Simulation engine** — D'Hondt method, fragment vote calculation, uniform swing model
 - 🔄 **Auto-swing mode** — automatic per-constituency swing derived from national list shares
+- ✅ **2026 final result** — the official, certified result (NVI / valasztas.hu) can be toggled on alongside the simulation for comparison; seats are computed by the same D'Hondt + fragment-vote engine from the real votes (TISZA 141 · FIDESZ-KDNP 52 · Mi Hazánk 6)
 - 👤 **Real candidates** — 651 registered 2026 candidates from vtr.valasztas.hu
 - 📋 **List mandates** — clickable party lists, OEVK winners automatically filtered out
 - 📈 **Opinion polls** — 300+ polls trending from English Wikipedia
@@ -280,7 +294,7 @@ npm run dev
 | Source | Data | Format |
 |--------|------|----------|
 | 🏛️ [vtr.valasztas.hu/ogy2022](https://vtr.valasztas.hu/ogy2022/) | 2022 OEVK + list results | JSON API |
-| 🏛️ [vtr.valasztas.hu/ogy2026](https://vtr.valasztas.hu/ogy2026/) | 2026 candidates (651) | JSON API |
+| 🏛️ [vtr.valasztas.hu/ogy2026](https://vtr.valasztas.hu/ogy2026/) | 2026 candidates (651) + official certified result | JSON API |
 | 🏛️ [vtr.valasztas.hu/stat](https://vtr.valasztas.hu/stat) | 2026 OEVK definitions + settlements | JSON API |
 | 🏛️ [static.valasztas.hu](https://static.valasztas.hu/dyn/oevk_data/oevk.json) | OEVK boundaries (polygons) | JSON |
 | 📦 [static.valasztas.hu](https://static.valasztas.hu/dyn/letoltesek/valasztasi_eredmenyek_1990-2024.zip) | 2014 list results | ZIP → XLSX |
@@ -296,6 +310,16 @@ npm run dev
 npm run test                # Backend tests (D'Hondt + fragment votes)
 npm run build               # Full build (backend + frontend)
 ```
+
+## ☁️ Deploying to Vercel
+
+The project runs on Vercel in a serverless setup:
+
+- The **frontend** is served as a static build (`frontend/dist`).
+- The **backend** Express app runs as a single serverless function (`api/[...path].ts`) handling all `/api/*` traffic.
+- The **database is read-only**: the deployment ships a prebuilt SQLite snapshot (`backend/data/valasztas.db`) opened in `readonly` mode. As a result, *saving* simulations (POST `/api/simulations`) is unavailable on Vercel — all computation and queries work normally.
+
+Configuration lives in `vercel.json`. To refresh the data, re-run the Python import locally and commit the updated `backend/data/valasztas.db` snapshot.
 
 ## 📄 License
 

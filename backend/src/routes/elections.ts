@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../db/database';
+import { computeActualResult } from '../services/actualResult';
 
 export const electionsRouter = Router();
 
@@ -100,6 +101,22 @@ electionsRouter.get('/compare', (req, res) => {
   `).all(...years);
 
   res.json(results);
+});
+
+// GET /api/elections/:year/actual-result — Tényleges (hivatalos) eredmény SimulationResult formában
+electionsRouter.get('/:year/actual-result', (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  if (isNaN(year)) {
+    res.status(400).json({ error: 'Érvénytelen évszám' });
+    return;
+  }
+
+  const result = computeActualResult(year);
+  if (!result) {
+    res.status(404).json({ error: `Nincs tényleges eredményadat erre az évre: ${year}` });
+    return;
+  }
+  res.json(result);
 });
 
 // GET /api/elections/:year/national-shares — Országos listás/egyéni arányok

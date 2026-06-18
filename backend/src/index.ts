@@ -30,6 +30,12 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '0.1.0' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Választási Modellező backend fut: http://localhost:${PORT}`);
-});
+// Serverless (Vercel) környezetben nem indítunk saját HTTP szervert —
+// az Express app-ot handlerként exportáljuk (lásd api/[...path].ts).
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Választási Modellező backend fut: http://localhost:${PORT}`);
+  });
+}
+
+export default app;
