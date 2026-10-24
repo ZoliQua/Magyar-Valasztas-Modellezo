@@ -41,6 +41,8 @@ describe('Képviselői névsor (buildMpRoster)', () => {
     expect(ev.outgoing[0].end_date).toBe('2026-05-01');
     expect(ev.incoming.map(m => m.name)).toEqual(['BELÉPŐ']);
     expect(ev.incoming[0].granted_by).toBe('nvb-1');
+    expect(ev.incoming[0].granted_by_ref).toBe('NVB 1/2026');
+    expect(ev.outgoing[0].ended_by_ref).toBe('NVB 1/2026');
     expect(ev.sources).toEqual(['https://example.hu/1']);
   });
 

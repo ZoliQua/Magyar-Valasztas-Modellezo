@@ -16,14 +16,19 @@ export function buildMpRoster(
   changes: MpChangeRow[],
   oevkNames: Record<string, string> = {},
 ): MpRoster {
+  const refById = new Map(changes.map(c => [c.id, c.decision_ref]));
   const toMp = (m: MpMandateRow): ActualMP => ({
     name: m.name,
     party_id: m.party_id,
     source: m.mandate_type,
     ...(m.oevk_id ? { oevk_id: m.oevk_id, oevk_name: oevkNames[m.oevk_id] || m.oevk_id } : {}),
     ...(m.list_position != null ? { list_position: m.list_position } : {}),
-    ...(m.granted_by_change_id ? { granted_by: m.granted_by_change_id } : {}),
-    ...(m.ended_by_change_id ? { ended_by: m.ended_by_change_id, end_date: m.end_date ?? undefined } : {}),
+    ...(m.granted_by_change_id
+      ? { granted_by: m.granted_by_change_id, granted_by_ref: refById.get(m.granted_by_change_id) }
+      : {}),
+    ...(m.ended_by_change_id
+      ? { ended_by: m.ended_by_change_id, ended_by_ref: refById.get(m.ended_by_change_id), end_date: m.end_date ?? undefined }
+      : {}),
   });
 
   const order = (a: MpMandateRow, b: MpMandateRow) => {

@@ -144,8 +144,10 @@ export interface ActualMP {
   list_position?: number;
   /** Ha későbbi NVB-határozattal lépett be: a határozat azonosítója */
   granted_by?: string;
+  granted_by_ref?: string;
   /** Ha már nem képviselő: a távozást rögzítő határozat azonosítója és dátuma */
   ended_by?: string;
+  ended_by_ref?: string;
   end_date?: string;
 }
 

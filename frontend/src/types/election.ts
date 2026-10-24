@@ -57,6 +57,35 @@ export interface PredictedMP {
   oevk_name?: string;
   list_position?: number;
   original_list_position?: number;
+  /** Csak tényleges névsornál: későbbi NVB-határozattal lépett be */
+  granted_by?: string;
+  granted_by_ref?: string;
+  /** Csak tényleges névsornál: már nem képviselő */
+  ended_by?: string;
+  ended_by_ref?: string;
+  end_date?: string;
+}
+
+/** NVB-határozattal kiadott mandátumváltozás (tényleges, nem projekció) */
+export interface MpChangeEvent {
+  id: string;
+  decision_ref: string;
+  decision_date: string;
+  party_id: string;
+  reason: string | null;
+  note: string | null;
+  sources: string[];
+  outgoing: PredictedMP[];
+  incoming: PredictedMP[];
+}
+
+/** Tényleges képviselői névsor: GET /api/elections/:year/mps */
+export interface MpRoster {
+  year: number;
+  current: PredictedMP[];
+  original: PredictedMP[];
+  changes: MpChangeEvent[];
+  seatsByParty: Record<string, number>;
 }
 
 export interface MPPrediction {
