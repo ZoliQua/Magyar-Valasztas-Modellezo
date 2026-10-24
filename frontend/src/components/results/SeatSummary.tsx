@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '../../hooks/useAnimatedNumber';
+
 interface SeatSummaryProps {
   seats: Record<string, number>;
   partyColors: Record<string, string>;
@@ -20,7 +22,7 @@ export default function SeatSummary({ seats, partyColors, partyNames, onPartyCli
           <div
             key={party}
             style={{ width: `${(count / total) * 100}%`, backgroundColor: partyColors[party] || '#999' }}
-            className="transition-all duration-500"
+            className="transition-all duration-700 ease-out"
             title={`${partyNames[party] || party}: ${count}`}
           />
         ))}
@@ -37,7 +39,7 @@ export default function SeatSummary({ seats, partyColors, partyNames, onPartyCli
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: partyColors[party] || '#999' }} />
               <span className="text-sm text-gray-300">{partyNames[party] || party}</span>
             </div>
-            <span className="font-data text-sm font-medium text-white">{count}</span>
+            <span className="font-data text-sm font-medium text-white"><AnimatedNumber value={count} /></span>
           </button>
         ))}
       </div>

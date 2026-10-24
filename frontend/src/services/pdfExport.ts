@@ -376,9 +376,10 @@ async function addHemicyclePage(doc: jsPDF, data: PdfExportInput) {
   doc.text(af('199 mandátum félkör diagram — prediktált parlamenti összetétel'), MARGIN, y);
   y += 8;
 
-  // SVG keresés a DOM-ban: a HemicycleChart SVG-je
+  // SVG keresés a DOM-ban: a szimuláció HemicycleChart SVG-je
+  // (a bekapcsolt tényleges eredmény patkóját kihagyjuk)
   const hemicycleSvg = document.querySelector<SVGElement>(
-    'svg[viewBox="0 0 600 340"]'
+    'svg[viewBox="0 0 600 340"]:not([data-chart="actual"])'
   );
 
   if (hemicycleSvg) {
