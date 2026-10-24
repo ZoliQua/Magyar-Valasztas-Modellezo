@@ -1,0 +1,144 @@
+{
+  "_leiras": "A 2026-os jogerős eredmény (NVI, 2026-05-07) után történt képviselői személycserék. Kézzel gondozott adat: minden eseményhez a Nemzeti Választási Bizottság határozata a forrás. A jelölteket a közös országos lista sorszáma azonosítja (list_position), a név csak ellenőrzésre szolgál — az import leáll, ha a kettő nem egyezik a list_candidates táblával. Ahol egy határozat több mandátumot ad ki egyszerre, a kilépők és belépők párosítását szándékosan nem rögzítjük, mert a források nem adják meg egyértelműen.",
+  "election_year": 2026,
+  "frissitve": "2026-10-24",
+  "changes": [
+    {
+      "id": "nvb-425-2026",
+      "decision_ref": "NVB 425/2026",
+      "decision_date": "2026-05-01",
+      "party_id": "mi_hazank",
+      "reason": "Lemondás az alakuló ülés előtt (EP-képviselő maradt)",
+      "outgoing": [
+        { "list_position": 5, "name": "BORVENDÉG ZSUZSANNA" }
+      ],
+      "incoming": [
+        { "list_position": 7, "name": "SZABADI ISTVÁN" }
+      ],
+      "sources": [
+        "https://www.valasztas.hu/hatarozat?id=69f4da857fe4ec0002bcec45%230001",
+        "https://www.portfolio.hu/gazdasag/20260501/valasztas-2026-dontott-az-nvb-a-listas-mandatumokrol-az-utolso-percben-is-kiesett-egy-nev-834168"
+      ]
+    },
+    {
+      "id": "nvb-426-2026",
+      "decision_ref": "NVB 426/2026",
+      "decision_date": "2026-05-01",
+      "party_id": "fidesz_kdnp",
+      "reason": "24 megválasztott listás képviselő lemondása az alakuló ülés előtt",
+      "outgoing": [
+        { "list_position": 1, "name": "ORBÁN VIKTOR" },
+        { "list_position": 2, "name": "SEMJÉN ZSOLT" },
+        { "list_position": 3, "name": "KÖVÉR LÁSZLÓ" },
+        { "list_position": 4, "name": "GÁL KINGA" },
+        { "list_position": 6, "name": "KUBATOV GÁBOR" },
+        { "list_position": 7, "name": "KÓSA LAJOS" },
+        { "list_position": 8, "name": "NÉMETH SZILÁRD" },
+        { "list_position": 10, "name": "LATORCAI JÁNOS" },
+        { "list_position": 11, "name": "LEZSÁK SÁNDOR" },
+        { "list_position": 12, "name": "JAKAB ISTVÁN" },
+        { "list_position": 14, "name": "MOHÁCSY ISTVÁN" },
+        { "list_position": 15, "name": "SZTOJKA ATTILA" },
+        { "list_position": 16, "name": "TAPOLCZAI GERGELY" },
+        { "list_position": 18, "name": "SELMECZI GABRIELLA" },
+        { "list_position": 23, "name": "ROGÁN ANTAL" },
+        { "list_position": 27, "name": "MOLNÁR ÁGNES" },
+        { "list_position": 30, "name": "BÁNKI ERIK" },
+        { "list_position": 31, "name": "DEMETER ANDRÁS" },
+        { "list_position": 33, "name": "KOVÁCS ZSOLT" },
+        { "list_position": 34, "name": "FÖLDESI GYULA" },
+        { "list_position": 36, "name": "MENCZER TAMÁS" },
+        { "list_position": 39, "name": "SOLTÉSZ MIKLÓS" },
+        { "list_position": 41, "name": "NYITRAI ZSOLT" },
+        { "list_position": 42, "name": "ZSIGMOND BARNA PÁL" }
+      ],
+      "incoming": [
+        { "list_position": 46, "name": "MOLNÁRNÉ DR. LEZSÁK ANNA" },
+        { "list_position": 47, "name": "NÉMETH BALÁZS" },
+        { "list_position": 48, "name": "VITÁLYOS ESZTER" },
+        { "list_position": 49, "name": "TUZSON BENCE" },
+        { "list_position": 51, "name": "HANKÓ BALÁZS" },
+        { "list_position": 78, "name": "SESZTÁK MIKLÓS" },
+        { "list_position": 83, "name": "TAKÁCS ÁRPÁD" },
+        { "list_position": 84, "name": "MÁTHÉ ZSUZSA" },
+        { "list_position": 85, "name": "CZIRBUS GÁBOR" },
+        { "list_position": 88, "name": "KONCZ ZSÓFIA" },
+        { "list_position": 96, "name": "NAGY BÁLINT" },
+        { "list_position": 100, "name": "HORVÁTH LÁSZLÓ" },
+        { "list_position": 103, "name": "WITZMANN MIHÁLY" },
+        { "list_position": 118, "name": "HARGITAI JÁNOS" },
+        { "list_position": 121, "name": "ZSIGÓ RÓBERT" },
+        { "list_position": 122, "name": "PÓCS JÁNOS" },
+        { "list_position": 123, "name": "TAKÁCS PÉTER" },
+        { "list_position": 130, "name": "CSIBI KRISZTINA" },
+        { "list_position": 131, "name": "BENCSIK JÁNOS" },
+        { "list_position": 152, "name": "HEGEDŰS BARBARA" },
+        { "list_position": 158, "name": "RADICS BÉLA" },
+        { "list_position": 170, "name": "PANYI MIKLÓS" },
+        { "list_position": 218, "name": "SZŰCS GÁBOR" },
+        { "list_position": 237, "name": "VARGA ZSOLTNÉ SZALAI PIROSKA MÁRIA" }
+      ],
+      "note": "A jelölőszervezetek eredetileg Szécsi Zoltánt (211.) is megnevezték, ő visszalépett; helyette Horváth László (100.) kapta a mandátumot.",
+      "sources": [
+        "https://www.valasztas.hu/hatarozat?id=69f4dac27fe4ec0002bcec46%230003",
+        "https://mandiner.hu/belfold/2026/05/hivatalos-megvan-a-25-uj-parlamenti-kepviselo-neve",
+        "https://www.portfolio.hu/gazdasag/20260501/valasztas-2026-dontott-az-nvb-a-listas-mandatumokrol-az-utolso-percben-is-kiesett-egy-nev-834168"
+      ]
+    },
+    {
+      "id": "nvb-444-445-2026",
+      "decision_ref": "NVB 444/2026 és 445/2026",
+      "decision_date": "2026-08-06",
+      "party_id": "fidesz_kdnp",
+      "reason": "Lemondás: Szijjártó Péter (2026-07-15), Budai Gyula (2026-08-03)",
+      "outgoing": [
+        { "list_position": 19, "name": "SZIJJÁRTÓ PÉTER", "end_date": "2026-07-15" },
+        { "list_position": 40, "name": "BUDAI GYULA", "end_date": "2026-08-03" }
+      ],
+      "incoming": [
+        { "list_position": 210, "name": "PALÓC ANDRÉ" },
+        { "list_position": 222, "name": "HORTAY OLIVÉR" }
+      ],
+      "sources": [
+        "https://www.valasztas.hu/hatarozat?id=6a7497a23063260002de2819%230002",
+        "https://www.valasztas.hu/hatarozat?id=6a7497e0bcf918000243dcc7%230001",
+        "https://magyarnemzet.hu/belfold/2026/08/fidesz-frakcio-hortay-oliver-paloc-andre",
+        "https://infostart.hu/interju/2026/08/10/eskut-tett-ket-uj-fideszes-kepviselo-szijjarto-peter-es-budai-gyula-helyet-veszik-at"
+      ]
+    },
+    {
+      "id": "nvb-454-2026",
+      "decision_ref": "NVB 454/2026",
+      "decision_date": "2026-09-15",
+      "party_id": "fidesz_kdnp",
+      "reason": "Lemondás: Lázár János (2026-08-20)",
+      "outgoing": [
+        { "list_position": 20, "name": "LÁZÁR JÁNOS", "end_date": "2026-08-20" }
+      ],
+      "incoming": [
+        { "list_position": 266, "name": "SZEKERES PÁL" }
+      ],
+      "sources": [
+        "https://www.valasztas.hu/hatarozat?id=6aa938ddead8350002c3384b%230001",
+        "https://www.vg.hu/kozelet/2026/09/lazar-janos-szekeres-pal-orszaggyules-fidesz-kdnp-part"
+      ]
+    },
+    {
+      "id": "nvb-463-2026",
+      "decision_ref": "NVB 463/2026",
+      "decision_date": "2026-10-14",
+      "party_id": "fidesz_kdnp",
+      "reason": "Lemondás: Orbán Balázs (2026-09-22, EP-képviselő lett)",
+      "outgoing": [
+        { "list_position": 21, "name": "ORBÁN BALÁZS", "end_date": "2026-09-22" }
+      ],
+      "incoming": [
+        { "list_position": 150, "name": "KARDOSNÉ GYURKÓ KATALIN" }
+      ],
+      "sources": [
+        "https://www.valasztas.hu/hatarozat?id=6acf7fa7c7569200023ec91b%230001",
+        "https://www.origo.hu/belpol/2026/10/kardosne-gyurko-katalin-uj-kepviselo-fidesz-parlament"
+      ]
+    }
+  ]
+}

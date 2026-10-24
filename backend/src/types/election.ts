@@ -110,3 +110,65 @@ export interface SavedSimulation {
   description: string | null;
   config_json: string;
 }
+
+// Képviselői mandátum (tényleges, nem projekció) — mp_mandates sor
+export interface MpMandateRow {
+  party_id: string;
+  name: string;
+  mandate_type: 'oevk' | 'lista';
+  oevk_id: string | null;
+  list_position: number | null;
+  granted_by_change_id: string | null;
+  ended_by_change_id: string | null;
+  end_date: string | null;
+}
+
+// NVB-határozattal kiadott mandátumváltozás — mp_changes sor
+export interface MpChangeRow {
+  id: string;
+  decision_ref: string;
+  decision_date: string;
+  party_id: string;
+  reason: string | null;
+  note: string | null;
+  sources_json: string;
+}
+
+// Egy képviselő a megjelenítéshez (a frontend PredictedMP-vel kompatibilis)
+export interface ActualMP {
+  name: string;
+  party_id: string;
+  source: 'oevk' | 'lista';
+  oevk_id?: string;
+  oevk_name?: string;
+  list_position?: number;
+  /** Ha későbbi NVB-határozattal lépett be: a határozat azonosítója */
+  granted_by?: string;
+  /** Ha már nem képviselő: a távozást rögzítő határozat azonosítója és dátuma */
+  ended_by?: string;
+  end_date?: string;
+}
+
+export interface MpChangeEvent {
+  id: string;
+  decision_ref: string;
+  decision_date: string;
+  party_id: string;
+  reason: string | null;
+  note: string | null;
+  sources: string[];
+  outgoing: ActualMP[];
+  incoming: ActualMP[];
+}
+
+export interface MpRoster {
+  year: number;
+  /** Aktuális 199 képviselő */
+  current: ActualMP[];
+  /** A jogerős eredmény szerinti eredeti mandátumosok */
+  original: ActualMP[];
+  /** Személycserék időrendben */
+  changes: MpChangeEvent[];
+  /** Aktuális frakciólétszám pártonként */
+  seatsByParty: Record<string, number>;
+}
