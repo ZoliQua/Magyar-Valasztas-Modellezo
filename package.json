@@ -2,7 +2,7 @@
   "name": "valasztas-modellezo",
   "version": "0.1.0",
   "private": true,
-  "description": "Magyar Választási Modellező 2026",
+  "description": "Magyar Választási Modellező",
   "workspaces": [
     "backend",
     "frontend"

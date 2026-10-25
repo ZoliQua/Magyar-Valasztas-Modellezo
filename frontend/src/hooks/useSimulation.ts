@@ -98,7 +98,7 @@ export function useSimulation() {
     setInput(prev => ({ ...prev, swingMode: mode }));
   }, []);
 
-  /** Preset betöltése: 2022 vagy 2018 országos arányok */
+  /** Preset betöltése: 2018 / 2022 / 2026 tényleges országos listás arányok */
   const loadPreset = useCallback(async (year: number) => {
     try {
       const res = await fetch(`/api/elections/${year}/national-shares`);

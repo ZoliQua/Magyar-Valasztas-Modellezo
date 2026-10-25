@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db/database';
 import { computeActualResult } from '../services/actualResult';
+import { getMpRoster } from '../services/mps';
 
 export const electionsRouter = Router();
 
@@ -117,6 +118,22 @@ electionsRouter.get('/:year/actual-result', (req, res) => {
     return;
   }
   res.json(result);
+});
+
+// GET /api/elections/:year/mps — Tényleges képviselői névsor (eredeti, aktuális, személycserék)
+electionsRouter.get('/:year/mps', (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  if (isNaN(year)) {
+    res.status(400).json({ error: 'Érvénytelen évszám' });
+    return;
+  }
+
+  const roster = getMpRoster(year);
+  if (!roster) {
+    res.status(404).json({ error: `Nincs képviselői névsor erre az évre: ${year}` });
+    return;
+  }
+  res.json(roster);
 });
 
 // GET /api/elections/:year/national-shares — Országos listás/egyéni arányok

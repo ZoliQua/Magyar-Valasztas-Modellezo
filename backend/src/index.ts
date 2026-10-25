@@ -34,7 +34,7 @@ app.get('/api/health', (_req, res) => {
 // az Express app-ot handlerként exportáljuk (lásd api/[...path].ts).
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Választási Modellező backend fut: http://localhost:${PORT}`);
+    console.log(`Magyar Választási Modellező backend fut: http://localhost:${PORT}`);
   });
 }
 

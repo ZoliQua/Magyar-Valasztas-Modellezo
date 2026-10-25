@@ -51,7 +51,8 @@ export default function MPListModal({ mps, partyColors, partyNames, title, filte
       list = list.filter(mp =>
         mp.name.toLowerCase().includes(q) ||
         (partyNames[mp.party_id] || '').toLowerCase().includes(q) ||
-        (mp.oevk_name || '').toLowerCase().includes(q)
+        (mp.oevk_name || '').toLowerCase().includes(q) ||
+        (mp.granted_by_ref || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -120,7 +121,15 @@ export default function MPListModal({ mps, partyColors, partyNames, title, filte
               {sorted.map(({ mp, origIdx }) => (
                 <tr key={`${mp.party_id}-${mp.name}-${origIdx}`} className="border-t border-gray-800/30 hover:bg-gray-800/40">
                   <td className="px-4 py-2 font-data text-gray-500">{origIdx + 1}</td>
-                  <td className="px-2 py-2 text-white">{mp.name}</td>
+                  <td className="px-2 py-2 text-white">
+                    {mp.name}
+                    {mp.granted_by_ref && (
+                      <span className="ml-1.5 text-[10px] px-1 py-px rounded border border-amber-600/50 text-amber-300 whitespace-nowrap"
+                        title="A jogerős eredmény után, NVB-határozattal kapta meg a mandátumot">
+                        új · {mp.granted_by_ref}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: partyColors[mp.party_id] || '#999' }} />

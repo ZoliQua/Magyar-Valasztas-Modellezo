@@ -111,9 +111,44 @@ CREATE TABLE IF NOT EXISTS settlement_results (
   FOREIGN KEY (party_id) REFERENCES parties(id)
 );
 
+-- Képviselői mandátumok (2026-tól): az eredeti, jogerős mandátumosok és a
+-- későbbi NVB-határozatokkal belépők. Aktuális = ended_by_change_id IS NULL.
+-- Feltöltés: scripts/import_mps_2026.py
+CREATE TABLE IF NOT EXISTS mp_changes (
+  id TEXT PRIMARY KEY,
+  election_year INTEGER NOT NULL,
+  decision_ref TEXT NOT NULL,
+  decision_date TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  reason TEXT,
+  note TEXT,
+  sources_json TEXT NOT NULL,
+  FOREIGN KEY (election_year) REFERENCES elections(year),
+  FOREIGN KEY (party_id) REFERENCES parties(id)
+);
+
+CREATE TABLE IF NOT EXISTS mp_mandates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  election_year INTEGER NOT NULL,
+  party_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  mandate_type TEXT NOT NULL CHECK (mandate_type IN ('oevk', 'lista')),
+  oevk_id TEXT,
+  list_position INTEGER,
+  granted_by_change_id TEXT,
+  ended_by_change_id TEXT,
+  end_date TEXT,
+  UNIQUE (election_year, party_id, name),
+  FOREIGN KEY (election_year) REFERENCES elections(year),
+  FOREIGN KEY (party_id) REFERENCES parties(id),
+  FOREIGN KEY (granted_by_change_id) REFERENCES mp_changes(id),
+  FOREIGN KEY (ended_by_change_id) REFERENCES mp_changes(id)
+);
+
 -- Indexek
 CREATE INDEX IF NOT EXISTS idx_oevk_results_year ON oevk_results(election_year);
 CREATE INDEX IF NOT EXISTS idx_oevk_results_oevk ON oevk_results(oevk_id_2026);
 CREATE INDEX IF NOT EXISTS idx_list_results_year ON list_results(election_year);
 CREATE INDEX IF NOT EXISTS idx_polls_date ON polls(poll_date);
 CREATE INDEX IF NOT EXISTS idx_settlement_results ON settlement_results(election_year, settlement_id);
+CREATE INDEX IF NOT EXISTS idx_mp_mandates_year ON mp_mandates(election_year, party_id);

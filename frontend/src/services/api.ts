@@ -1,4 +1,4 @@
-import type { Party, Election, SimulationInput, SimulationResult, MPPrediction } from '../types/election';
+import type { Party, Election, SimulationInput, SimulationResult, MPPrediction, MpRoster } from '../types/election';
 
 const BASE_URL = '/api';
 
@@ -46,4 +46,8 @@ export const api = {
   // Tényleges (hivatalos) választási eredmény SimulationResult formában
   getActualResult: (year: number) =>
     fetchJson<SimulationResult>(`/elections/${year}/actual-result`),
+
+  // Tényleges képviselői névsor: eredeti, aktuális, NVB-személycserék
+  getMps: (year: number) =>
+    fetchJson<MpRoster>(`/elections/${year}/mps`),
 };

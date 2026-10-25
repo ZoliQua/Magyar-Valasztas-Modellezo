@@ -1,5 +1,7 @@
 import type { Party } from '../../types/election';
 
+const PRESET_YEARS = [2018, 2022, 2026];
+
 interface ListShareInputsProps {
   parties: Party[];
   shares: Record<string, number>;
@@ -28,28 +30,21 @@ export default function ListShareInputs({
         </span>
       </div>
 
-      {/* Preset gombok */}
+      {/* Preset gombok: tényleges listás eredmények */}
       <div className="flex gap-2">
-        <button
-          onClick={() => onLoadPreset(2022)}
-          className={`flex-1 px-2 py-1.5 text-xs rounded border transition-colors ${
-            activePreset === 2022
-              ? 'bg-blue-600 border-blue-500 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          2022 eredmény
-        </button>
-        <button
-          onClick={() => onLoadPreset(2018)}
-          className={`flex-1 px-2 py-1.5 text-xs rounded border transition-colors ${
-            activePreset === 2018
-              ? 'bg-blue-600 border-blue-500 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          2018 eredmény
-        </button>
+        {PRESET_YEARS.map(year => (
+          <button
+            key={year}
+            onClick={() => onLoadPreset(year)}
+            className={`flex-1 px-2 py-1.5 text-xs rounded border transition-colors ${
+              activePreset === year
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            {year} eredmény
+          </button>
+        ))}
       </div>
 
       {mainParties.map(party => {

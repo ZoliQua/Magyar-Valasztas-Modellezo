@@ -1,4 +1,4 @@
-# 🇭🇺 Magyar Választási Modellező 2026
+# 🇭🇺 Magyar Választási Modellező
 
 > 🗳️ Interaktív webalkalmazás a 2026-os magyar országgyűlési választás modellezéséhez
 
@@ -26,6 +26,7 @@ A **Magyar Választási Modellező** egy teljes körű, interaktív dashboard a 
 - 📊 **Szimuláció motor** — D'Hondt módszer, töredékszavazat-számítás, uniform swing modell
 - 🔄 **Egyedi swing mód** — OEVK szintű automatikus swing a listás arányok alapján
 - ✅ **2026 végleges eredmény** — a hivatalos, jogerős eredmény (NVI / valasztas.hu) egy kapcsolóval a szimuláció mellé kapcsolható összehasonlításként; a mandátumokat ugyanaz a D'Hondt + töredékszavazat motor számolja a valós szavazatokból (TISZA 141 · FIDESZ-KDNP 52 · Mi Hazánk 6)
+- 🔁 **Képviselői változások** — az aktuális 199 képviselő név szerint a tényleges patkón, és a választás óta történt személycserék idővonala NVB-határozatokkal (29 csere; a frakcióarány változatlan)
 - 👤 **Valódi jelöltek** — 651 regisztrált 2026-os jelölt a vtr.valasztas.hu-ról
 - 📋 **Listás mandátumok** — kattintható pártlisták, OEVK győztesek automatikus kiszűrése
 - 📈 **Közvélemény-kutatások** — 300+ kutatás trendje az angol Wikipediáról
@@ -94,6 +95,10 @@ python import_candidates_2026.py
 
 # Országos listajelöltek (452 jelölt, 6 lista)
 python import_list_candidates.py
+
+# 2026-os képviselők + azóta történt NVB-személycserék
+# (forrás: VTR mandátumok + scripts/data/mp_changes_2026.json)
+python import_mps_2026.py
 
 # OEVK térkép GeoJSON (106 poligon)
 python download_geojson.py
@@ -214,6 +219,7 @@ The **Hungarian Election Modeler** is a comprehensive interactive dashboard for 
 - 📊 **Simulation engine** — D'Hondt method, fragment vote calculation, uniform swing model
 - 🔄 **Auto-swing mode** — automatic per-constituency swing derived from national list shares
 - ✅ **2026 final result** — the official, certified result (NVI / valasztas.hu) can be toggled on alongside the simulation for comparison; seats are computed by the same D'Hondt + fragment-vote engine from the real votes (TISZA 141 · FIDESZ-KDNP 52 · Mi Hazánk 6)
+- 🔁 **MP changes** — the current 199 MPs by name on the actual-result hemicycle, plus a timeline of seat changes since the election, each backed by a National Election Commission (NVB) decision (29 swaps; party strengths unchanged)
 - 👤 **Real candidates** — 651 registered 2026 candidates from vtr.valasztas.hu
 - 📋 **List mandates** — clickable party lists, OEVK winners automatically filtered out
 - 📈 **Opinion polls** — 300+ polls trending from English Wikipedia
@@ -274,6 +280,7 @@ python import_oevk_mapping.py       # 2026 OEVK definitions (106 + 3207 settleme
 python import_elections.py           # Election results (2022 VTR + 2018 + 2014)
 python import_candidates_2026.py     # 2026 candidates (651 registered)
 python import_list_candidates.py     # National list candidates (452 across 6 lists)
+python import_mps_2026.py            # 2026 MPs + later NVB seat changes (scripts/data/mp_changes_2026.json)
 python download_geojson.py           # OEVK boundary GeoJSON (106 polygons)
 python import_polls.py               # Opinion polls (300+ from EN Wikipedia)
 
