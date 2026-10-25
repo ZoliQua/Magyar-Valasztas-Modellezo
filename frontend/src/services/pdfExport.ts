@@ -100,7 +100,7 @@ function addHeaderFooter(doc: jsPDF, totalPagesRef: { count: number }, dateStr: 
     // Fejléc szöveg
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.muted);
-    doc.text(af('Választási Modellező 2026'), MARGIN, 8);
+    doc.text(af('Magyar Választási Modellező'), MARGIN, 8);
     doc.text(dateStr, PAGE_W - MARGIN, 8, { align: 'right' });
 
     // Lábléc vonal

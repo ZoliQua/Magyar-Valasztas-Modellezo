@@ -1,4 +1,4 @@
-# 🇭🇺 Magyar Választási Modellező 2026
+# 🇭🇺 Magyar Választási Modellező
 
 > 🗳️ Interaktív webalkalmazás a 2026-os magyar országgyűlési választás modellezéséhez
 

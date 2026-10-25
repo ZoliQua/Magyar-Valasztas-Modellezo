@@ -217,6 +217,7 @@ export default function SimulationPanel({ onRegisterExport }: SimulationPanelPro
                 supermajority={result.supermajority}
                 mps={mpPrediction?.mps}
                 onShowAllMPs={() => setShowAllMPs(true)}
+                onPartyClick={(id) => setShowPartyMPs(id)}
               />
               <SeatSummary
                 seats={result.totalSeats}

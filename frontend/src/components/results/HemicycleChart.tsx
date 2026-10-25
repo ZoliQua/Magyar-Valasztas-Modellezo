@@ -17,6 +17,8 @@ interface HemicycleProps {
   markChanged?: boolean;
   /** data-chart azonosító (pl. a PDF-export ez alapján különíti el a tényleges patkót) */
   chartId?: string;
+  /** Pártra kattintás (jelmagyarázat vagy szék) — pl. a párt képviselőinek listája */
+  onPartyClick?: (partyId: string) => void;
 }
 
 interface SeatPosition {
@@ -85,12 +87,15 @@ const PARTY_ORDER: Record<string, number> = {
 };
 
 export default function HemicycleChart({
-  seats, partyColors, partyNames, majority, supermajority, mps, onShowAllMPs, title, markChanged, chartId,
+  seats, partyColors, partyNames, majority, supermajority, mps, onShowAllMPs, title, markChanged, chartId, onPartyClick,
 }: HemicycleProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const centerValueRef = useRef(0);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; mp: PredictedMP } | null>(null);
   const [hoverParty, setHoverParty] = useState<string | null>(null);
+  // A D3-eseménykezelő mindig a legfrissebb callbacket hívja, újrakötés nélkül
+  const onPartyClickRef = useRef(onPartyClick);
+  onPartyClickRef.current = onPartyClick;
 
   const totalSeats = Object.values(seats).reduce((a, b) => a + b, 0) || 199;
   const positions = useMemo(() => generateSeatPositions(totalSeats), [totalSeats]);
@@ -173,8 +178,7 @@ export default function HemicycleChart({
       .attr('class', 'seat')
       .attr('cx', d => d.x).attr('cy', d => d.y)
       .attr('r', 0)
-      .attr('fill', d => d.color)
-      .style('cursor', 'pointer');
+      .attr('fill', d => d.color);
     entered.transition().duration(reduce ? 0 : 500).delay(d => (reduce ? 0 : d.idx * 3)).attr('r', SEAT_R);
 
     circles.transition().duration(duration).delay(d => (reduce ? 0 : d.idx * 2))
@@ -184,6 +188,8 @@ export default function HemicycleChart({
     entered.merge(circles)
       .attr('stroke', baseStroke)
       .attr('stroke-width', baseStrokeWidth)
+      .style('cursor', onPartyClick ? 'pointer' : 'default')
+      .on('click', (_event, d) => onPartyClickRef.current?.(d.party))
       .on('mouseover', function (event, d) {
         d3.select(this).attr('r', SEAT_R + 2).attr('stroke', '#fff').attr('stroke-width', 1.5);
         setHoverParty(d.party);
@@ -215,7 +221,7 @@ export default function HemicycleChart({
       .attr('font-size', majority ? '14px' : '16px')
       .text(majority ? partyNames[majority] || majority : 'Nincs többség');
     center.select('text.center-note').text(supermajority ? 'KÉTHARMAD' : '');
-  }, [seatData, seats, partyColors, partyNames, majority, supermajority, markChanged]);
+  }, [seatData, seats, partyColors, partyNames, majority, supermajority, markChanged, !!onPartyClick]);
 
   // Pártkiemelés: a többi párt székei elhalványulnak
   useEffect(() => {
@@ -272,7 +278,11 @@ export default function HemicycleChart({
             onMouseLeave={() => setHoverParty(null)}
             onFocus={() => setHoverParty(party)}
             onBlur={() => setHoverParty(null)}
+            onClick={onPartyClick ? () => onPartyClick(party) : undefined}
+            title={onPartyClick ? `${partyNames[party] || party} — képviselők listája` : undefined}
             className={`flex items-center gap-1.5 text-xs rounded px-1.5 py-0.5 transition-opacity ${
+              onPartyClick ? 'cursor-pointer hover:bg-gray-800' : 'cursor-default'
+            } ${
               hoverParty && hoverParty !== party ? 'opacity-40' : 'opacity-100'
             }`}
           >

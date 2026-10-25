@@ -96,6 +96,7 @@ export default function ActualResultOverlay({ year, partyColors, partyNames }: A
               mps={rosterMatches ? roster!.current : undefined}
               markChanged={rosterMatches}
               onShowAllMPs={rosterMatches ? () => setListParty(null) : undefined}
+              onPartyClick={rosterMatches ? (id) => setListParty(id) : undefined}
             />
             <SeatSummary
               seats={result.totalSeats}
