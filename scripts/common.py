@@ -32,7 +32,8 @@ def get_db() -> sqlite3.Connection:
             "Futtasd először: npx tsx backend/src/db/init.ts"
         )
     conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA journal_mode = WAL")
+    # Rollback journal (nem WAL), hogy a commitolt DB Vercelen readonly megnyitható legyen
+    conn.execute("PRAGMA journal_mode = DELETE")
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
