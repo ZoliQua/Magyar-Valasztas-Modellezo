@@ -38,7 +38,9 @@ export function getDb(): Database.Database {
   }
 
   db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
+  // Rollback journal (nem WAL): a verziókövetett pillanatkép így Vercelen
+  // readonly is megnyitható (WAL módban -shm fájlt kellene létrehozni).
+  db.pragma('journal_mode = DELETE');
   db.pragma('foreign_keys = ON');
 
   return db;
